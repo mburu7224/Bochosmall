@@ -261,3 +261,162 @@ Inside the newly opened page container, if localFeeds contains saved media data,
 A functional Watch Now action that loads its stored Firebase resource URL directly into the player frame and swaps the display to the main player view.
 
 A functional Delete action that invokes removeVideoFromDevice(), clears out the record, and automatically re-renders the viewport array smoothly without forcing an entire window reload.
+
+I need you to fix two critical bugs in our new "Saved Videos" layout implementation on the "Ruiru Media House" web app: the video thumbnails are missing, and the "Watch Now" transition needs to perfectly mirror the native player behavior.
+
+Please update the code in `localstorage.js` and my main template rendering scripts according to these exact rules:
+
+### 1. Fix the Missing Thumbnail Bug (Data Capture Update)
+- **The Issue:** The saved cards are rendering blank or missing their preview images because the thumbnail URL isn't being saved to browser memory.
+- **The Fix:** Update the code that triggers when a user clicks the `#saveVideoBtn`. Along with the title, metadata, and Firebase video URL, ensure it explicitly targets the active video's poster frame image or the parent card component's image thumbnail URL element in the DOM.
+- Save this image string value inside the object as `thumbnailUrl` and commit it to `localStorage` using `JSON.stringify()`.
+- Update the library grid renderer loop to dynamically read this `thumbnailUrl` and assign it to the `<img src="...">` attribute of each saved video card component so the visuals appear correctly.
+
+### 2. Make "Watch Now" Mirror Native System Behavior Completely
+- **The Issue:** Currently, clicking "Watch Now" from the Saved Videos page doesn't open the player frame correctly or replicate how videos load from the Home or Entertainment sections.
+- **The Fix:** Do not write a custom or separate player routine for the Saved Videos tab. Instead, look at my global script configuration to see how the Home page triggers a video view (e.g., calling a global function like `playVideo(videoData)`, loading a video ID, or passing a metadata object to the main template frame).
+- Configure the "Watch Now" button's click listener to fire that **exact same native video initialization function** using the captured Firebase URL, title, and metadata. 
+- Ensure it updates the browser state, pushes the video to the screen player area, handles scrolling behavior, and handles user panel switching exactly like clicking a standard live sermon or entertainment video item from the homepage feeds.
+
+Please output only the modified data object structure, the thumbnail card image markup, and the event listener connector that calls my app's native player function.
+
+
+The "Watch Now" button on the Saved Videos page is currently causing a "radio effect." The video plays audio perfectly in the background, but the UI remains stuck on the Saved Videos library view instead of switching over to show the actual video player screen. 
+
+You need to fix the view-switching logic so that clicking "Watch Now" mirrors the homepage behavior 100% visually and technically.
+
+Please update the "Watch Now" click event listener with these exact structural fixes:
+
+### 1. Force the UI Page-View Switch (Bring Player to Front)
+- Look at how the Homepage or Entertainment pages handle a video click. They don't just load the video URL; they trigger a layout function that shifts the active view state.
+- Inside the "Watch Now" click event, right before or after you initialize the video source, you must call the app's native layout-switching routine (e.g., hiding `#savedVideosView` and displaying my main video player container framework, or toggling the active page class). 
+- The user must be instantly navigated to the active player view so they can visually see the video frame, the title, and the action buttons.
+
+### 2. Match Native Loading Behavior (Scroll & State Resets)
+- Ensure that the view switch handles window scroll resets (e.g., `window.scrollTo(0, 0)`) if the native homepage functions do, so the video player isn't pushed off-screen.
+- Ensure the main navigation sidebar states update correctly if needed, or maintain the standard player page layout configuration.
+
+### 3. Re-verify the Code Linkage
+Make sure the event flow looks exactly like this architecture:
+```javascript
+// Inside your renderSavedVideosLibrary loop for the "Watch Now" button:
+watchNowBtn.addEventListener('click', () => {
+    // 1. Call the global native function that loads the Firebase URL into the player
+    playNativeVideoEngine(videoData); 
+    
+    // 2. FORCE THE VIEW CHANGE (The missing step causing the radio effect!)
+    // Insert the exact code lines used by Home/Entertainment to show the video player page layout
+    showVideoPageLayoutView(); 
+});
+
+The "Watch Now" button from the Saved Videos page is still only playing audio in the background (the radio effect). It needs to work EXACTLY like YouTube and mirror how the rest of standard video clicks work on the app. When clicked, it must immediately switch the UI to the active video player view page.
+
+Please update the click event for the "Watch Now" button inside `localstorage.js` with these explicit instructions:
+
+### 1. Execute the YouTube-style Page Switch
+- Do not just play the source URL in isolation. You must trigger the exact same page-routing or layout-shifting function that fires when a user clicks a video on the Homepage or Entertainment feeds.
+- Force the main content container to hide the `#savedVideosView` grid and immediately display the global video player framework interface layout. The user should instantly see the video player, the dynamic title, and the action buttons right in front of them.
+
+### 2. Match Native Page Load Behavior
+- If clicking a video on the homepage automatically resets the window view, make sure to include `window.scrollTo(0, 0);` so the player opens cleanly at the top of the screen.
+- Ensure that the video Title, Metadata strings, and Action Button states (including the Save button changing to its green `.saved-active` state) update immediately beneath the main player to reflect the video that was just opened.
+
+### 3. Structural Event Flow to Implement:
+```javascript
+// Within the renderSavedVideosLibrary card loop:
+watchNowBtn.addEventListener('click', () => {
+    // 1. Pass the data to the global video engine used by Home/Entertainment
+    playNativeVideoEngine(videoData); 
+    
+    // 2. FORCE THE PAGE ROUTER TO VIEW THE VIDEO PLAYER (Just like YouTube)
+    // Switch the container visibility states instantly here:
+    document.getElementById('savedVideosView').style.display = 'none';
+    document.getElementById('mainVideoPlayerContainer').style.display = 'block'; 
+});
+# initialize, commit, and push to an existing remote repo you create on GitHub
+cd 'c:\Users\randonstudio\Downloads\Insight-Viewer-main'
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/mburu7224/ONE-TERM.git
+git push -u origin main
+
+I need you to build a brand new "Watch History" feature for the "Ruiru Media House" web app. This feature must automatically track recently watched videos and clear them out after 7 days.
+
+Please follow these exact structural, styling, and logic specifications:
+
+### 1. Sidebar UI Update (Layout Sequence)
+- Locate the lower section of the sidebar menu (below the horizontal divider line `<hr>`).
+- Add a new menu link for "History" positioned exactly **in between** "Saved Videos" and "Support Our Work".
+- It must stack vertically and match the exact CSS classes, typography, padding, icons, and hover highlight effects of the other menu items.
+- Update the HTML structure to follow this sequence:
+```html
+<div class="sidebar-footer">
+    <a href="#" id="savedVideosNavBtn" class="nav-link">
+        <span class="icon">🔖</span> <span class="text">Saved Videos</span>
+    </a>
+
+    <a href="#" id="historyNavBtn" class="nav-link">
+        <span class="icon">🕒</span> <span class="text">History</span>
+    </a>
+
+    <a href="#" id="supportBtn" class="nav-link">
+        <span class="icon">❤️</span> <span class="text">Support Our Work</span>
+    </a>
+</div>
+2. Automatic History Logging Engine (localstorage.js)
+Add a new tracking system inside localstorage.js that works locally on whatever gadget (phone, tablet, computer) the user opens the site on:
+
+Trigger Event: Create a function called addToWatchHistory(videoObj). This function must run automatically whenever any video is selected and begins playing on the site (hook it into your main video loading/play functions).
+
+Data Architecture: The object pushed into the watchHistory local array must contain:
+
+title, metadata, thumbnailUrl, and firebaseUrl
+
+watchedAt: A timestamp integer representing the exact moment it was opened (Date.now()).
+
+Duplicate Prevention: If the video being watched is already in the history array, remove the old entry and push the new one to the top of the list with the updated timestamp.
+
+3. The 7-Day Rolling Expiration Filter
+Inside the history fetching logic, implement a time-gate calculation to auto-expire data older than 7 days:
+
+When fetching the history array, calculate the 7-day cutoff window in milliseconds:
+const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
+Filter the array immediately to keep only recent videos:
+const activeHistory = watchHistory.filter(video => video.watchedAt >= sevenDaysAgo);
+
+Save the cleaned activeHistory array back to localStorage to remove expired entries from the user's device memory permanently.
+
+4. Page-Shift Navigation & UI View Render
+When #historyNavBtn is clicked, seamlessly clear the main page content panel and display a new container called #historyView (matching how "Entertainment" or "Saved Videos" opens a clean page layout view).
+
+Empty State: If no videos have been watched in the last 7 days, display: "Your watch history is empty. Recent videos you watch will appear here for 7 days!"
+
+Grid Display: Render the recent videos in a standard video card grid matching your theme.
+
+Actions on Cards:
+
+Clicking the card/"Watch Now": Must trigger your native YouTube-style player routing function, shifting the view to the player page and immediately loading the video stream visuals.
+
+Clear History Button: Add a master button at the top right of the #historyView page layout that lets the user wipe their entire history array instantly.
+The sidebar design looks great, but I need you to implement the exact page-opening navigation for the new "History" tab right now. 
+
+It must behave EXACTLY like the rest of the application's global navigation. When a user clicks from "Home" to "Entertainment" or "Bible Study," the app executes a smooth page/view shift inside the main content frame next to the sidebar. The "History" button must trigger that exact same page-shifting behavior.
+
+Please implement the navigation engine logic based on these precise specifications:
+
+### 1. Force the Standard Page-Shift Layout (The Navigation Click)
+- Bind a click event listener to the `#historyNavBtn` element in the sidebar.
+- The exact millisecond it is clicked, it must trigger the application's core view-routing function to hide the Homepage feed, the Bible Study sections, or any active video player layout currently visible.
+- It must bring a new, clean content panel called `#historyView` to the absolute front of the main display screen. 
+
+### 2. Match Global Navigation States
+- **Scroll Reset:** Ensure that opening the History page automatically triggers `window.scrollTo(0, 0);` so the newly opened view is positioned perfectly at the top of the gadget's screen, matching native tab shifts.
+- **Active Tab Highlight:** Ensure that the active CSS class indicator (the background highlight overlay on the sidebar) correctly moves and updates to sit on the "History" tab so the user visually sees they have shifted to a new section.
+
+### 3. Structural Setup for the View Container
+For this phase, just ensure the template framework opens a beautifully structured, empty responsive grid area inside the newly opened `#historyView` page layout. Use my standard main-page alignment padding so that it matches the look of the Homepage and Entertainment layout blocks perfectly.
+
+Please output only the clean JavaScript click navigation event listener and the initial HTML container block structure needed to lock down this page-opening transition seamlessly!

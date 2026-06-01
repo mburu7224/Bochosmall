@@ -49,6 +49,46 @@ async function signInWithGoogle() {
     }
 }
 
+// Robust attach for History nav (ensures listener is bound even if DOMContentLoaded already fired)
+(function attachHistoryNavImmediate() {
+    function attach() {
+        const historyBtn = document.getElementById('historyNavBtn');
+        if (!historyBtn) return;
+        // avoid adding duplicate listeners
+        if (historyBtn.__historyBound) return;
+        historyBtn.__historyBound = true;
+
+        historyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('History nav (immediate) clicked');
+            try { if (typeof pauseAllMedia === 'function') pauseAllMedia(); } catch (err) {}
+            try { if (typeof closeWatchView === 'function') closeWatchView(); } catch (err) {}
+            try { window.scrollTo(0,0); } catch (err) {}
+            document.querySelectorAll('.nav-item, .nav-link').forEach(n => n.classList.remove('active'));
+            historyBtn.classList.add('active');
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            const historyView = document.getElementById('historyView');
+            if (historyView) {
+                historyView.classList.add('active');
+                const strip = historyView.querySelector('.section-strip'); if (strip) strip.style.display = '';
+                const grid = document.getElementById('historyViewGrid'); if (grid) grid.innerHTML = '';
+                try {
+                    const history = (typeof getWatchHistory === 'function') ? getWatchHistory() : (window.getWatchHistory ? window.getWatchHistory() : []);
+                    const docs = (Array.isArray(history) ? history : []).map((entry, idx) => ({ id: entry.firebaseUrl || entry.id || `history_${idx}`, data: Object.assign({}, (entry.metadata || {}), { title: entry.title || (entry.metadata && entry.metadata.title) || '', url: entry.firebaseUrl || (entry.metadata && entry.metadata.url) || '', thumbnailUrl: entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || '' }) }));
+                    if (grid) {
+                        if (!docs.length) grid.innerHTML = '<p class="text-center-message">Your watch history is empty. Recent videos you watch will appear here for 7 days!</p>';
+                        else docs.forEach(docItem => { const thumb = renderHomeThumbnail(docItem); thumb.addEventListener('click', () => openTheaterWithVideo(docItem, docs)); grid.appendChild(thumb); });
+                    }
+                } catch (err) { console.warn('history immediate render failed', err); }
+            }
+            const theater = document.getElementById('theaterContainer'); if (theater) { theater.classList.add('hidden'); theater.style.display = 'none'; }
+            const sidebarWrapper = document.querySelector('.sidebar-wrapper'); if (window.innerWidth <= 768 && sidebarWrapper && sidebarWrapper.classList.contains('active')) sidebarWrapper.classList.remove('active');
+        });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach); else attach();
+})();
+
 async function signOutUser() {
     try {
         await signOut(auth);
@@ -1335,6 +1375,41 @@ function renderHomeVideos() {
 }
 
 /**
+ * Show a local feed inside the Home layout using the same rendering pipeline as the Home page.
+ * docsArray should be an array of objects shaped like { id, data }
+ */
+function showLocalFeed(titleText, docsArray) {
+    try {
+        // set caches used by renderHomeVideos
+        homeDocsCache = Array.isArray(docsArray) ? docsArray.slice() : [];
+        homeVisibleCount = HOME_PAGE_SIZE;
+        homeSearchTerm = '';
+
+        // Update UI controls
+        const activeSectionTitle = document.getElementById('activeSectionTitle');
+        if (activeSectionTitle && titleText) activeSectionTitle.textContent = titleText;
+        const searchInput = document.getElementById('searchInput'); if (searchInput) searchInput.value = '';
+        const eventDateFilterInput = document.getElementById('eventDateFilter'); if (eventDateFilterInput) eventDateFilterInput.value = '';
+
+        // Move active nav styling handled by caller
+
+        // Show home section and ensure its strip is visible
+        document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+        const homeSection = document.getElementById('home-section');
+        if (homeSection) homeSection.classList.add('active');
+        const sectionStrip = document.querySelector('#home-section .section-strip'); if (sectionStrip) sectionStrip.style.display = '';
+
+        // Ensure player view hidden
+        const theater = document.getElementById('theaterContainer'); if (theater) { theater.classList.add('hidden'); theater.style.display = 'none'; }
+
+        // Render into the home grid using existing renderer
+        try { renderHomeVideos(); } catch (e) { console.warn('Failed to render local feed via renderHomeVideos', e); }
+    } catch (e) {
+        console.warn('showLocalFeed error', e);
+    }
+}
+
+/**
  * Open a Split Theater layout: left large sticky player (75vw), right scrollable playlist (25vw).
  */
 function openSplitTheater(selectedDoc, allDocs) {
@@ -1687,6 +1762,18 @@ function playWatchVideo(docItem, shouldScroll = true) {
     populateMainPlayer(docItem);
     playerContainer.dataset.currentVideoId = docItem.id;
     updatePlaylistHighlight(docItem.id);
+
+    try {
+        if (typeof addToWatchHistory === 'function') {
+            addToWatchHistory({
+                title: (docItem.data && docItem.data.title) || '',
+                metadata: (docItem.data && Object.assign({}, docItem.data)) || {},
+                thumbnailUrl: (docItem.data && docItem.data.thumbnailUrl) || '',
+                firebaseUrl: (docItem.data && (docItem.data.firebaseUrl || docItem.data.url)) || docItem.id || '',
+                watchedAt: Date.now()
+            });
+        }
+    } catch (e) { /* ignore history save errors */ }
 
     if (shouldScroll) {
         const theater = document.getElementById('theaterContainer');
@@ -2045,6 +2132,165 @@ function renderSavedVideosLibrary() {
     container.appendChild(grid);
 }
 
+// ---------------- Watch History Library ----------------
+function renderWatchHistoryLibrary() {
+    const container = document.getElementById('historyLibraryContainer');
+    if (!container) return;
+    const history = (typeof getWatchHistory === 'function') ? getWatchHistory() : (window.getWatchHistory ? window.getWatchHistory() : []);
+    container.innerHTML = '';
+
+    if (!history.length) {
+        const empty = document.createElement('div');
+        empty.className = 'saved-empty-state';
+        empty.innerHTML = `<div style="padding:40px;text-align:center;color:#444;">Your watch history is empty. Recent videos you watch will appear here for 7 days!</div>`;
+        container.appendChild(empty);
+        return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'saved-grid';
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(240px, 1fr))';
+    grid.style.gap = '14px';
+
+    history.forEach((entry, idx) => {
+        const title = entry.title || (entry.metadata && entry.metadata.title) || 'Untitled';
+        const url = entry.url || '';
+        const card = document.createElement('div');
+        card.className = 'saved-card';
+        // clicking the card should also play the video
+        card.style.cursor = 'pointer';
+        card.style.background = '#fff';
+        card.style.border = '1px solid var(--border-color)';
+        card.style.borderRadius = '12px';
+        card.style.overflow = 'hidden';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+
+        const thumb = document.createElement('div');
+        thumb.className = 'saved-thumb';
+        thumb.style.height = '140px';
+        thumb.style.background = '#f3f4f6';
+        thumb.style.display = 'flex';
+        thumb.style.alignItems = 'center';
+        thumb.style.justifyContent = 'center';
+        const img = document.createElement('img');
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '100%';
+        img.alt = title;
+        img.className = 'video-thumbnail-img';
+        img.loading = 'lazy';
+        const thumbUrl = entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || (entry.url && getYouTubeVideoId(entry.url) ? `https://i.ytimg.com/vi/${getYouTubeVideoId(entry.url)}/hqdefault.jpg` : 'https://via.placeholder.com/480x270.png?text=No+Thumbnail');
+        img.src = thumbUrl;
+        thumb.appendChild(img);
+
+        const body = document.createElement('div');
+        body.style.padding = '12px';
+        body.style.display = 'flex';
+        body.style.flexDirection = 'column';
+        body.style.gap = '8px';
+
+        const h = document.createElement('div');
+        h.style.fontWeight = '700';
+        h.style.fontSize = '0.95rem';
+        h.textContent = title;
+
+        const sub = document.createElement('div');
+        sub.style.fontSize = '0.85rem';
+        sub.style.color = '#666';
+        sub.textContent = entry.watchedAt ? new Date(entry.watchedAt).toLocaleString() : '';
+
+        const actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.gap = '8px';
+        actions.style.marginTop = 'auto';
+
+        const watchBtn = document.createElement('button');
+        watchBtn.type = 'button';
+        watchBtn.className = 'watch-now-btn watch-action-btn';
+        watchBtn.textContent = '▶️ Watch Now';
+        watchBtn.onclick = () => {
+            try {
+                try { pauseAllMedia(); } catch (e) { /* ignore */ }
+                document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                document.querySelectorAll('.nav-item, .nav-link').forEach(n => n.classList.remove('active'));
+                const theater = document.getElementById('theaterContainer'); if (theater) { theater.classList.remove('hidden'); theater.style.display = 'flex'; }
+                try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0,0); }
+            } catch (e) { /* ignore UI fallback */ }
+
+            const docData = Object.assign({}, (entry.metadata || {}));
+            docData.url = entry.url || docData.url;
+            if (entry.thumbnailUrl) docData.thumbnailUrl = entry.thumbnailUrl;
+            if (entry.title) docData.title = entry.title;
+            const docItem = { id: entry.id || entry.url || `history_${idx}`, data: docData };
+            if (typeof openTheaterWithVideo === 'function') openTheaterWithVideo(docItem, [docItem]);
+            else if (typeof playWatchVideo === 'function') playWatchVideo(docItem);
+        };
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'remove-saved-btn watch-action-btn';
+        removeBtn.textContent = '🗑️ Remove';
+        removeBtn.onclick = () => {
+            try { if (typeof removeFromWatchHistory === 'function') removeFromWatchHistory(entry.id || entry.url); } catch (e) { /* ignore */ }
+            renderWatchHistoryLibrary();
+        };
+
+        actions.appendChild(watchBtn);
+        actions.appendChild(removeBtn);
+
+        body.appendChild(h);
+        body.appendChild(sub);
+        body.appendChild(actions);
+
+        card.appendChild(thumb);
+        card.appendChild(body);
+
+        // expose firebase/url on the DOM node for reliable lookup
+        try { card.dataset.firebaseUrl = entry.firebaseUrl || entry.url || entry.id || ''; } catch (e) { /* ignore */ }
+
+        // play when clicking the card itself (attach per-card handler so metadata is captured)
+        card.addEventListener('click', (ev) => {
+            // avoid double-firing when clicking inner buttons
+            if (ev.target && (ev.target.tagName === 'BUTTON' || ev.target.closest && ev.target.closest('button'))) return;
+
+            try { try { pauseAllMedia(); } catch (e) { /* ignore */ } } catch (e) { /* ignore */ }
+            try { if (typeof closeWatchView === 'function') closeWatchView(); } catch (e) { /* ignore */ }
+
+            // Reset scroll to top so player is visible
+            try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
+
+            // Build canonical docItem with a usable url field
+            try {
+                const docData = Object.assign({}, (entry.metadata || {}));
+                docData.url = entry.firebaseUrl || entry.url || docData.url || entry.id || '';
+                if (entry.thumbnailUrl) docData.thumbnailUrl = entry.thumbnailUrl;
+                if (entry.title) docData.title = entry.title;
+                const docItem = { id: entry.firebaseUrl || entry.id || entry.url || `history_${idx}`, data: docData };
+
+                // Force UI switch: hide history view and surface the theater/player immediately
+                try {
+                    const historyViewContent = document.getElementById('historyViewContent'); if (historyViewContent) historyViewContent.style.display = 'none';
+                    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                    document.querySelectorAll('.nav-item, .nav-link').forEach(n => n.classList.remove('active'));
+                    const theater = document.getElementById('theaterContainer'); if (theater) { theater.classList.remove('hidden'); theater.style.display = 'flex'; }
+                } catch (e) { /* ignore UI toggle errors */ }
+
+                // Call native launcher used by Homepage so player + metadata update instantly
+                if (typeof openTheaterWithVideo === 'function') {
+                    openTheaterWithVideo(docItem, [docItem]);
+                } else if (typeof playWatchVideo === 'function') {
+                    playWatchVideo(docItem, true);
+                }
+            } catch (e) { console.warn('History card play failed', e); }
+        });
+
+        grid.appendChild(card);
+    });
+
+    container.appendChild(grid);
+}
+
 // Wire sidebar saved nav button to reuse navigation flow
 document.addEventListener('DOMContentLoaded', () => {
     const savedNav = document.getElementById('savedVideosNavBtn');
@@ -2074,24 +2320,90 @@ document.addEventListener('DOMContentLoaded', () => {
         navItems.forEach(nav => nav.classList.remove('active'));
         savedNav.classList.add('active');
 
-        // Hide other content sections and show saved section
-        document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
-        const savedSection = document.getElementById('saved-videos-section');
-        if (savedSection) savedSection.classList.add('active');
-
-        // Hide player/theater to show list view
-        const theater = document.getElementById('theaterContainer');
-        if (theater) theater.classList.add('hidden');
-
-        // Auto-close sidebar on mobile
-        if (window.innerWidth <= 768 && sidebarWrapper && sidebarWrapper.classList.contains('active')) {
-            sidebarWrapper.classList.remove('active');
-        }
-
-        // Immediately fetch device-local saved videos and render
+        // Show home layout and render saved videos using the home renderer
         try {
-            if (typeof renderSavedVideosLibrary === 'function') renderSavedVideosLibrary();
-        } catch (e) { console.warn('Failed to render saved videos', e); }
+            const saved = (typeof getSavedVideos === 'function') ? getSavedVideos() : (window.getSavedVideos ? window.getSavedVideos() : []);
+            const docs = saved.map((entry, idx) => ({ id: entry.id || entry.url || `saved_${idx}`, data: Object.assign({}, (entry.metadata || {}), { title: entry.title || (entry.metadata && entry.metadata.title) || '', url: entry.url || (entry.metadata && entry.metadata.url) || '', thumbnailUrl: entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || '' }) }));
+
+            // Move active nav styling to Saved Videos tab
+            navItems.forEach(nav => nav.classList.remove('active'));
+            savedNav.classList.add('active');
+
+            // Ensure sidebar mobile auto-close
+            if (window.innerWidth <= 768 && sidebarWrapper && sidebarWrapper.classList.contains('active')) {
+                sidebarWrapper.classList.remove('active');
+            }
+
+            // Use the home feed renderer pipeline
+            showLocalFeed('Saved Videos', docs);
+        } catch (e) {
+            console.warn('Failed to render saved videos via home feed', e);
+            try { if (typeof renderSavedVideosLibrary === 'function') renderSavedVideosLibrary(); } catch (err) { /* ignore */ }
+        }
+    });
+
+    // Bind History nav to perform the standard page-shift (exact behavior as other global nav links)
+    document.addEventListener('DOMContentLoaded', () => {
+        const historyBtn = document.getElementById('historyNavBtn');
+        if (!historyBtn) return;
+
+        historyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            try { if (typeof pauseAllMedia === 'function') pauseAllMedia(); } catch (err) { }
+            try { if (typeof closeWatchView === 'function') closeWatchView(); } catch (err) { }
+
+            // Reset scroll to top to match native tab shifts
+            try { window.scrollTo(0, 0); } catch (err) { /* ignore */ }
+
+            // Move active styling to History
+            document.querySelectorAll('.nav-item, .nav-link').forEach(n => n.classList.remove('active'));
+            historyBtn.classList.add('active');
+
+            // Hide all other content sections and bring historyView to front
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            const historyView = document.getElementById('historyView');
+            if (historyView) {
+                historyView.classList.add('active');
+
+                // Ensure the section strip is visible and the grid is reset
+                const strip = historyView.querySelector('.section-strip'); if (strip) strip.style.display = '';
+                const grid = document.getElementById('historyViewGrid'); if (grid) grid.innerHTML = '';
+                // Render the full history feed (uses getWatchHistory which auto-filters 7-day window)
+                try {
+                    const history = (typeof getWatchHistory === 'function') ? getWatchHistory() : (window.getWatchHistory ? window.getWatchHistory() : []);
+                    const docs = (Array.isArray(history) ? history : []).map((entry, idx) => ({
+                        id: entry.firebaseUrl || entry.id || `history_${idx}`,
+                        data: Object.assign({}, (entry.metadata || {}), { title: entry.title || (entry.metadata && entry.metadata.title) || '', url: entry.firebaseUrl || (entry.metadata && entry.metadata.url) || '', thumbnailUrl: entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || '' })
+                    }));
+
+                    // Use the same visual card renderer as Home
+                    if (grid) {
+                        if (!docs.length) {
+                            grid.innerHTML = '<p class="text-center-message">Your watch history is empty. Recent videos you watch will appear here for 7 days!</p>';
+                        } else {
+                            docs.forEach((docItem) => {
+                                const thumb = renderHomeThumbnail(docItem);
+                                thumb.addEventListener('click', () => openTheaterWithVideo(docItem, docs));
+                                grid.appendChild(thumb);
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Failed to render history feed', err);
+                }
+            }
+
+            // Hide theater/player so list view is prominent
+            const theater = document.getElementById('theaterContainer');
+            if (theater) { theater.classList.add('hidden'); theater.style.display = 'none'; }
+
+            // Auto-close sidebar on mobile
+            const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+            if (window.innerWidth <= 768 && sidebarWrapper && sidebarWrapper.classList.contains('active')) {
+                sidebarWrapper.classList.remove('active');
+            }
+        });
     });
 });
 
