@@ -150,6 +150,116 @@
         });
     }
 
+    // --- Watch History Helpers ---
+
+    function getWatchHistory() {
+        try {
+            const raw = JSON.parse(localStorage.getItem('watchHistory')) || [];
+            const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+            const activeHistory = (Array.isArray(raw) ? raw : []).filter(video => (video && typeof video.watchedAt === 'number') ? (video.watchedAt >= sevenDaysAgo) : false);
+            // persist cleaned history back to storage to remove expired entries permanently
+            try { localStorage.setItem('watchHistory', JSON.stringify(activeHistory)); } catch (e) { /* ignore */ }
+            return activeHistory;
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function setWatchHistory(arr) {
+        try {
+            localStorage.setItem('watchHistory', JSON.stringify(arr || []));
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function removeOldWatchHistory() {
+        try {
+            // reuse getWatchHistory which already filters and persists
+            getWatchHistory();
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * addToWatchHistory(videoObj)
+     * videoObj must contain: title, metadata, thumbnailUrl, firebaseUrl
+     * auto-adds watchedAt timestamp, deduplicates by firebaseUrl (or url/id)
+     */
+    function addToWatchHistory(videoObj) {
+        if (!videoObj) return false;
+        try {
+            const now = Date.now();
+            const list = JSON.parse(localStorage.getItem('watchHistory')) || [];
+            const idKey = videoObj.firebaseUrl || videoObj.id || videoObj.url || '';
+
+            // Build normalized entry
+            const entry = {
+                title: videoObj.title || (videoObj.data && videoObj.data.title) || '',
+                metadata: videoObj.metadata || videoObj.data || {},
+                thumbnailUrl: videoObj.thumbnailUrl || (videoObj.data && videoObj.data.thumbnailUrl) || '',
+                firebaseUrl: videoObj.firebaseUrl || (videoObj.data && videoObj.data.url) || (videoObj.url || ''),
+                watchedAt: videoObj.watchedAt || now
+            };
+
+            // Remove existing entries matching same firebaseUrl (or url/id)
+            const deduped = (Array.isArray(list) ? list : []).filter(v => {
+                if (!v) return false;
+                const existingKey = v.firebaseUrl || v.id || v.url || '';
+                return existingKey !== idKey;
+            });
+
+            // Add new entry to front
+            deduped.unshift(entry);
+
+            // Cap list length to 200
+            if (deduped.length > 200) deduped.length = 200;
+
+            // Persist cleaned list
+            try { localStorage.setItem('watchHistory', JSON.stringify(deduped)); } catch (e) { /* ignore */ }
+
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function removeFromWatchHistory(idOrUrl) {
+        if (!idOrUrl) return false;
+        try {
+            const list = JSON.parse(localStorage.getItem('watchHistory')) || [];
+            const filtered = (Array.isArray(list) ? list : []).filter(i => !(i && (i.firebaseUrl === idOrUrl || i.id === idOrUrl || i.url === idOrUrl)));
+            try { localStorage.setItem('watchHistory', JSON.stringify(filtered)); } catch (e) { /* ignore */ }
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function removeFromWatchHistory(idOrUrl) {
+        if (!idOrUrl) return false;
+        try {
+            const list = getWatchHistory();
+            const filtered = list.filter(i => !(i && (i.id === idOrUrl || i.url === idOrUrl)));
+            return setWatchHistory(filtered);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Export watch history helpers to global scope
+    window.getWatchHistory = getWatchHistory;
+    window.setWatchHistory = setWatchHistory;
+    window.addToWatchHistory = addToWatchHistory;
+    window.removeFromWatchHistory = removeFromWatchHistory;
+    window.removeOldWatchHistory = removeOldWatchHistory;
+
+    // Run a cleanup pass immediately on load
+    try { removeOldWatchHistory(); } catch (e) { /* ignore */ }
+
     // Bind immediately in case saved view is already rendered; safe to call multiple times
     try { bindSavedWatchNowDelegation(); } catch (e) { /* ignore */ }
 })();

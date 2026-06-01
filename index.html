@@ -36,13 +36,15 @@
             <hr class="sidebar-divider" aria-hidden="true">
             <div class="sidebar-footer">
                 <a href="#" id="savedVideosNavBtn" class="nav-link">
-                    <span class="icon">🔖</span>
-                    <span class="text">Saved Videos</span>
+                    <span class="icon">🔖</span> <span class="text">Saved Videos</span>
+                </a>
+
+                <a href="#" id="historyNavBtn" class="nav-link">
+                    <span class="icon">🕒</span> <span class="text">History</span>
                 </a>
 
                 <a href="#" id="supportBtn" class="nav-link" role="button" aria-haspopup="dialog" aria-controls="supportModal">
-                    <span class="icon">❤️</span>
-                    <span class="text">Support Our Work</span>
+                    <span class="icon">❤️</span> <span class="text">Support Our Work</span>
                 </a>
             </div>
         </div>
@@ -188,6 +190,15 @@
                             <span>Your bookmarked videos</span>
                         </div>
                         <div id="savedVideosLibraryContainer" class="saved-videos-library"></div>
+                    </section>
+                    <section id="historyView" class="content-section" aria-labelledby="historyTitle">
+                        <div class="section-strip">
+                            <h2 id="historyTitle">History</h2>
+                            <span>Recently watched (keeps 7 days)</span>
+                        </div>
+
+                        <!-- Use the same grid class as Home so layout, spacing and responsive behavior match exactly -->
+                        <div id="historyViewGrid" class="home-video-grid"></div>
                     </section>
             </main>
         </div>
