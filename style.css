@@ -147,6 +147,25 @@ body.sidebar-collapsed .main-content-wrapper {
     margin-left: var(--sidebar-width-collapsed);
 }
 
+/* Ensure collapse behavior targets all sidebar links (header nav and footer links) */
+body.sidebar-collapsed .sidebar-wrapper a .text {
+    display: none !important;
+}
+
+body.sidebar-collapsed .sidebar-wrapper a,
+body.sidebar-collapsed .sidebar-nav a {
+    justify-content: center !important;
+    padding: 14px 0 !important;
+    border-radius: 0 !important;
+    font-size: 0 !important;
+}
+
+body.sidebar-collapsed .sidebar-wrapper a .icon,
+body.sidebar-collapsed .sidebar-nav a i {
+    margin-right: 0 !important;
+    font-size: 18px !important;
+}
+
 .main-header {
     display: flex;
     align-items: center;
@@ -162,6 +181,77 @@ body.sidebar-collapsed .main-content-wrapper {
     gap: 10px;
     flex-wrap: nowrap;
     overflow: hidden;
+}
+
+/* Brand header alignment (YouTube-style) */
+.header-left-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+}
+
+.header-brand-logo {
+    display: inline-block !important;
+    visibility: visible !important;
+    height: 36px !important;
+    width: 36px !important;
+    object-fit: fill !important;
+    border-radius: 8px !important;
+    flex-shrink: 0 !important;
+}
+
+/* Responsive brand title: desktop shows full name, mobile shows initials and can expand */
+.main-title {
+    display: flex;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    align-items: center;
+    gap: 6px;
+}
+
+.brand-initials {
+    display: none; /* hidden on desktop */
+    font-weight: 700;
+}
+
+.brand-extra-text {
+    max-width: 300px; /* Fully visible on desktop */
+    transition: max-width 0.4s ease, opacity 0.3s ease;
+    opacity: 1;
+    display: inline-block;
+}
+
+@media (max-width: 768px) {
+    .brand-initials {
+        display: inline-block; /* show initials on mobile */
+    }
+
+    /* Automatically collapse the extra text on mobile by default */
+    .main-title:not(.expanded) .brand-extra-text {
+        max-width: 0;
+        opacity: 0;
+        pointer-events: none;
+    }
+    /* Stronger rule to override runtime style races */
+    .main-title:not(.expanded) .brand-extra-text {
+        max-width: 0 !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+    }
+    
+    /* When clicked/activated, smoothly animate it open */
+    .main-title.expanded .brand-extra-text {
+        max-width: 300px;
+        opacity: 1;
+        /* allow override when expanded */
+        max-width: 300px !important;
+        opacity: 1 !important;
+    }
 }
 
 .topbar-title {

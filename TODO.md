@@ -440,3 +440,68 @@ Please implement the click handler logic according to these exact specifications
 - Just like when launching a video from the Homepage or Entertainment tabs, include `window.scrollTo(0, 0);` inside the click handler so the page automatically scrolls cleanly to the top where the video player is located.
 
 Please output only the updated JavaScript event listener loop that binds this dynamic play-on-click functionality to the history grid cards.
+We need to fix the sidebar collapse behavior on desktop/laptop screens. When the hamburger menu is clicked and the sidebar minimizes into an icon-only bar, the text for the original items hides perfectly. However, the text for our three new items (Saved Videos, History, and Support Our Work) does not disappear, causing layout issues.
+
+Please update the script and CSS so that these three new items behave exactly like the original ones during a sidebar collapse.
+
+### 1. CSS Class Alignment Rule
+Make sure your sidebar collapse styles target ALL `.nav-link` elements uniformly. If you are using a class like `.sidebar-collapsed` or `.minimized`, ensure the text span is hidden cleanly:
+
+```css
+/* When the sidebar is collapsed/minimized via the hamburger toggle */
+.sidebar-collapsed .nav-link .text {
+    display: none !important; /* Hides the text word completely */
+}
+
+/* Ensure the container width shrinks perfectly to only fit the icons */
+.sidebar-collapsed {
+    width: 70px; /* Adjust this to match your existing collapsed width */
+}
+
+/* Ensure the icon centers perfectly inside the narrow link area */
+.sidebar-collapsed .nav-link {
+    justify-content: center;
+    padding: 12px 0;
+}
+
+.sidebar-collapsed .nav-link .icon {
+    margin-right: 0 !important; /* Removes the text margin when collapsed */
+}
+2. JavaScript Verification
+If your code relies on JavaScript to dynamically hide text elements on click, make sure the loop or toggle includes the new button IDs: #savedVideosNavBtn, #historyNavBtn, and #supportBtn.
+
+Please apply this fix now so that clicking the hamburger menu toggles the text off for ALL items, leaving a clean, uniform icon-only navigation bar!
+Our absolute, single focus right now is to add our brand logo to the top-left header bar to get an exact "YouTube vibe" and layout design. Do not touch or modify any other parts of the website, including the sidebar category navigation below. 
+
+Please perform this specific update:
+
+### 1. Update the Brand Header Container HTML
+Locate the container at the very top-left of the application that holds the hamburger menu link and the main title text. Insert the logo image file (located at `images/ruiru main icon.jpg`) exactly in between them—just like the YouTube logo sits between the hamburger button and the word "YouTube":
+
+```html
+<div class="header-left-brand">
+    <a href="#" id="sidebarToggleBtn" class="nav-link hamburger-menu">
+        <span class="icon">☰</span>
+    </a>
+
+    <img src="images/ruiru main icon.jpg" class="header-brand-logo" alt="Ruiru Media House Logo">
+
+    <h1 class="main-title">Ruiru Media House</h1>
+</div>
+2. Apply YouTube-Style CSS Alignments
+Add these precise styles to your stylesheet to ensure the hamburger, logo, and text sit cleanly inline, scale correctly, and match perfectly without any awkward shifts:
+
+CSS
+.header-left-brand {
+    display: flex;
+    align-items: center; /* Vertically aligns the hamburger button, logo, and text title perfectly */
+    gap: 12px;           /* Sets a clean, uniform spacing between elements just like YouTube */
+}
+
+.header-brand-logo {
+    height: 34px;        /* Scales the image down perfectly to match the text height */
+    width: 34px;         /* Maintains a strict 1:1 perfect square aspect ratio */
+    object-fit: fill;    /* Ensures your logo lines and details render crisp and sharp */
+    border-radius: 8px;  /* Smooths out the outer square corners beautifully */
+    flex-shrink: 0;      /* Prevents the browser from squeezing the logo on narrow screens */
+}

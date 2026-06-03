@@ -663,6 +663,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const collapsed = document.body.classList.toggle('sidebar-collapsed');
             sidebarToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            // Explicitly hide/show the text spans for all sidebar links (covers footer links)
+            try {
+                document.querySelectorAll('.sidebar-wrapper a').forEach(a => {
+                    const text = a.querySelector('.text');
+                    if (text) text.style.display = collapsed ? 'none' : '';
+                });
+            } catch (e) { /* ignore DOM errors */ }
         });
     }
 
@@ -673,6 +680,64 @@ document.addEventListener('DOMContentLoaded', () => {
             goHomeDefault();
         }
     });
+
+    // Responsive brand title toggle for mobile: RMH <-> Ruiru Media House
+    (function bindBrandTitleToggle() {
+        const mainTitle = document.querySelector('.main-title');
+        if (!mainTitle) return;
+        if (mainTitle.__brandToggleBound) return;
+        mainTitle.__brandToggleBound = true;
+
+        const extra = mainTitle.querySelector('.brand-extra-text');
+        const initials = mainTitle.querySelector('.brand-initials');
+        if (!extra || !initials) return;
+
+        // apply collapsed or expanded inline styles depending on state
+        function applyCollapsed() {
+            extra.style.maxWidth = '0px';
+            extra.style.opacity = '0';
+            extra.style.pointerEvents = 'none';
+            mainTitle.classList.remove('expanded');
+        }
+
+        function applyExpanded() {
+            extra.style.maxWidth = '300px';
+            extra.style.opacity = '1';
+            extra.style.pointerEvents = '';
+            mainTitle.classList.add('expanded');
+        }
+
+        function ensureState() {
+            if (window.innerWidth > 768) {
+                // desktop: show full text
+                extra.style.maxWidth = '';
+                extra.style.opacity = '';
+                extra.style.pointerEvents = '';
+                mainTitle.classList.remove('expanded');
+            } else {
+                // mobile: default collapsed
+                if (!mainTitle.classList.contains('expanded')) applyCollapsed();
+                else applyExpanded();
+            }
+        }
+
+        const toggle = (e) => {
+            if (window.innerWidth > 768) return; // only collapse/expand on mobile
+            if (mainTitle.classList.contains('expanded')) applyCollapsed(); else applyExpanded();
+        };
+
+        mainTitle.addEventListener('click', toggle);
+        mainTitle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggle();
+            }
+        });
+
+        window.addEventListener('resize', ensureState);
+        // initial application
+        ensureState();
+    })();
 
     // --- Mobile Hamburger Menu Toggle ---
     const sidebarOverlay = document.getElementById('sidebarOverlay');
