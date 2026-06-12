@@ -22,7 +22,7 @@ const mimeTypes = {
 function send(res, statusCode, body, contentType) {
     res.writeHead(statusCode, {
         'Content-Type': contentType,
-        'Cache-Control': contentType.startsWith('text/html') ? 'no-store' : 'public, max-age=3600',
+        'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
         'Referrer-Policy': 'strict-origin-when-cross-origin',
         'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
@@ -46,13 +46,18 @@ function serveStatic(req, res) {
     const requestedPath = decodeURIComponent(new URL(req.url, `http://${req.headers.host}`).pathname);
     const relativePath = requestedPath === '/' ? '/index.html' : requestedPath;
     const filePath = path.resolve(rootDir, `.${relativePath}`);
+    const isDocumentRequest = (req.method === 'GET' || req.method === 'HEAD') && (
+        requestedPath === '/' ||
+        requestedPath === '/index.html' ||
+        !path.extname(requestedPath)
+    );
 
     if (!filePath.startsWith(`${rootDir}${path.sep}`) && filePath !== path.join(rootDir, 'index.html')) {
         send(res, 403, 'Forbidden', 'text/plain; charset=utf-8');
         return;
     }
 
-    if (relativePath === '/index.html') {
+    if (isDocumentRequest) {
         send(res, 200, renderAppShell(), mimeTypes['.html']);
         return;
     }

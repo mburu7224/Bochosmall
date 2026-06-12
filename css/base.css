@@ -1,0 +1,40 @@
+ :root {
+        --primary-color: #2c3e50;     --secondary-color: #3498db;     --accent-color: #f39c12;     --success-color: #27ae60;     --error-color: #e74c3c;     
+        --background-color: #f0f2f5;     --card-background: #ffffff;     --input-background: #f8f9fa;     
+        --text-color: #333;     --text-secondary: #666666;     
+        --border-color: #ddd;     
+        --sidebar-width-desktop: 280px;
+    --sidebar-width-collapsed: 76px;
+    --header-height-desktop: 64px;
+    --header-height-mobile: 50px;
+    --queen-height: 60px;
+    --gap: 10px;
+    --prince-height: 360px;     --player-details-height: 120px; }
+
+.hidden {
+    display: none !important;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    overflow-x: hidden;
+    color: var(--text-color);
+    min-height: 100vh;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    max-width: 100vw;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;     background-color: var(--card-background);
+}
+

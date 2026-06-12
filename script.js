@@ -49,46 +49,6 @@ async function signInWithGoogle() {
     }
 }
 
-// Robust attach for History nav (ensures listener is bound even if DOMContentLoaded already fired)
-(function attachHistoryNavImmediate() {
-    function attach() {
-        const historyBtn = document.getElementById('historyNavBtn');
-        if (!historyBtn) return;
-        // avoid adding duplicate listeners
-        if (historyBtn.__historyBound) return;
-        historyBtn.__historyBound = true;
-
-        historyBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('History nav (immediate) clicked');
-            try { if (typeof pauseAllMedia === 'function') pauseAllMedia(); } catch (err) {}
-            try { if (typeof closeWatchView === 'function') closeWatchView(); } catch (err) {}
-            try { window.scrollTo(0,0); } catch (err) {}
-            document.querySelectorAll('.nav-item, .nav-link').forEach(n => n.classList.remove('active'));
-            historyBtn.classList.add('active');
-            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-            const historyView = document.getElementById('historyView');
-            if (historyView) {
-                historyView.classList.add('active');
-                const strip = historyView.querySelector('.section-strip'); if (strip) strip.style.display = '';
-                const grid = document.getElementById('historyViewGrid'); if (grid) grid.innerHTML = '';
-                try {
-                    const history = (typeof getWatchHistory === 'function') ? getWatchHistory() : (window.getWatchHistory ? window.getWatchHistory() : []);
-                    const docs = (Array.isArray(history) ? history : []).map((entry, idx) => ({ id: entry.firebaseUrl || entry.id || `history_${idx}`, data: Object.assign({}, (entry.metadata || {}), { title: entry.title || (entry.metadata && entry.metadata.title) || '', url: entry.firebaseUrl || (entry.metadata && entry.metadata.url) || '', thumbnailUrl: entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || '' }) }));
-                    if (grid) {
-                        if (!docs.length) grid.innerHTML = '<p class="text-center-message">Your watch history is empty. Recent videos you watch will appear here for 7 days!</p>';
-                        else docs.forEach(docItem => { const thumb = renderHomeThumbnail(docItem); thumb.addEventListener('click', () => openTheaterWithVideo(docItem, docs)); grid.appendChild(thumb); });
-                    }
-                } catch (err) { console.warn('history immediate render failed', err); }
-            }
-            const theater = document.getElementById('theaterContainer'); if (theater) { theater.classList.add('hidden'); theater.style.display = 'none'; }
-            const sidebarWrapper = document.querySelector('.sidebar-wrapper'); if (window.innerWidth <= 768 && sidebarWrapper && sidebarWrapper.classList.contains('active')) sidebarWrapper.classList.remove('active');
-        });
-    }
-
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach); else attach();
-})();
-
 async function signOutUser() {
     try {
         await signOut(auth);
@@ -176,18 +136,11 @@ let currentWatchList = [];
 let currentWatchSidebarIds = new Set();
 let pendingWatchVideoId = new URLSearchParams(window.location.search).get('v');
 const sectionState = {};
+const MOBILE_NAV_MEDIA = '(max-width: 1024px)';
 
-window.addEventListener('wheel', (event) => {
-    if (event.ctrlKey || event.metaKey || !event.deltaY) return;
-    const scrollRoot = document.scrollingElement || document.documentElement;
-    const beforeTop = scrollRoot.scrollTop;
-
-    requestAnimationFrame(() => {
-        if (scrollRoot.scrollTop === beforeTop) {
-            window.scrollBy({ top: event.deltaY, left: event.deltaX, behavior: 'auto' });
-        }
-    });
-}, { passive: true, capture: true });
+function isMobileNavViewport() {
+    return window.matchMedia(MOBILE_NAV_MEDIA).matches;
+}
 
 function getSectionState(section) {
     if (!sectionState[section]) {
@@ -317,18 +270,19 @@ function setSidebarOpen(isOpen) {
     const sidebarWrapper = document.querySelector('.sidebar-wrapper');
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     const menuButtons = document.querySelectorAll('#launchpadViewerMenuBtn');
+    const useDrawerOverlay = Boolean(isOpen && (isMobileNavViewport() || document.body.classList.contains('launchpad-plugin-active')));
 
     if (sidebarWrapper) {
-        sidebarWrapper.classList.toggle('active', Boolean(isOpen));
+        sidebarWrapper.classList.toggle('active', Boolean(isOpen && (isMobileNavViewport() || document.body.classList.contains('launchpad-plugin-active'))));
     }
 
     if (sidebarOverlay) {
-        sidebarOverlay.classList.toggle('active', Boolean(isOpen));
+        sidebarOverlay.classList.toggle('active', useDrawerOverlay);
     }
 
     menuButtons.forEach((button) => {
-        button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-        button.classList.toggle('is-open', Boolean(isOpen));
+        button.setAttribute('aria-expanded', useDrawerOverlay ? 'true' : 'false');
+        button.classList.toggle('is-open', useDrawerOverlay);
     });
 }
 
@@ -339,6 +293,15 @@ function toggleSidebar() {
 
 function closeSidebar() {
     setSidebarOpen(false);
+}
+
+function reconcileSidebarForViewport() {
+    if (isMobileNavViewport() || document.body.classList.contains('launchpad-plugin-active')) return;
+    closeSidebar();
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    if (sidebarToggle) {
+        sidebarToggle.setAttribute('aria-expanded', document.body.classList.contains('sidebar-collapsed') ? 'false' : 'true');
+    }
 }
 
 function closeWatchView() {
@@ -1107,18 +1070,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Adjust on load and resize
     adjustMainContentMargin();
     window.addEventListener('resize', adjustMainContentMargin);
+    window.addEventListener('resize', reconcileSidebarForViewport);
+    reconcileSidebarForViewport();
 
     // Initialize draggable resizers for desktop
     initResizers();
 
 
     // --- Initial Page Load ---
-    // Simulate clicking the home nav item to load initial content
-    const initialNavItem = document.querySelector('.nav-item[data-section="home"]');
-    if (initialNavItem) {
-        initialNavItem.click();
-    }
-    // Also ensure home videos are loaded on initial load
     showOfflineBannerIfNeeded();
     loadHomeVideos();
     
@@ -2400,119 +2359,91 @@ function renderWatchHistoryLibrary() {
     container.appendChild(grid);
 }
 
-// Wire sidebar saved nav button to reuse navigation flow
+function getSavedVideoDocs() {
+    const saved = (typeof getSavedVideos === 'function') ? getSavedVideos() : (window.getSavedVideos ? window.getSavedVideos() : []);
+    return saved.map((entry, idx) => ({
+        id: entry.id || entry.url || `saved_${idx}`,
+        data: Object.assign({}, entry.metadata || {}, {
+            title: entry.title || (entry.metadata && entry.metadata.title) || '',
+            url: entry.url || (entry.metadata && entry.metadata.url) || '',
+            thumbnailUrl: entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || ''
+        })
+    }));
+}
+
+function getHistoryDocs() {
+    const history = (typeof getWatchHistory === 'function') ? getWatchHistory() : (window.getWatchHistory ? window.getWatchHistory() : []);
+    return (Array.isArray(history) ? history : []).map((entry, idx) => ({
+        id: entry.firebaseUrl || entry.id || `history_${idx}`,
+        data: Object.assign({}, entry.metadata || {}, {
+            title: entry.title || (entry.metadata && entry.metadata.title) || '',
+            url: entry.firebaseUrl || entry.url || (entry.metadata && entry.metadata.url) || '',
+            thumbnailUrl: entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || ''
+        })
+    }));
+}
+
+function resetLibraryNavigation(activeNav) {
+    pauseAllMedia();
+    closeWatchView();
+    document.getElementById('searchInput') && (document.getElementById('searchInput').value = '');
+    document.getElementById('eventDateFilter') && (document.getElementById('eventDateFilter').value = '');
+    document.getElementById('clearDateFilter')?.classList.add('hidden');
+    document.querySelectorAll('.nav-item, .nav-link').forEach(nav => nav.classList.remove('active'));
+    activeNav?.classList.add('active');
+    currentSearchTerm = '';
+    homeSearchTerm = '';
+    currentFilterDate = null;
+    closeSidebar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showSavedVideosView(savedNav) {
+    resetLibraryNavigation(savedNav);
+    try {
+        showLocalFeed('Saved Videos', getSavedVideoDocs());
+    } catch (e) {
+        console.warn('Failed to render saved videos via home feed', e);
+        renderSavedVideosLibrary();
+    }
+}
+
+function showHistoryView(historyBtn) {
+    resetLibraryNavigation(historyBtn);
+    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+
+    const historyView = document.getElementById('historyView');
+    const grid = document.getElementById('historyViewGrid');
+    if (!historyView || !grid) return;
+
+    historyView.classList.add('active');
+    grid.innerHTML = '';
+
+    const docs = getHistoryDocs();
+    if (!docs.length) {
+        grid.innerHTML = '<p class="text-center-message">Your watch history is empty. Recent videos you watch will appear here for 7 days!</p>';
+        return;
+    }
+
+    docs.forEach((docItem) => {
+        const thumb = renderHomeThumbnail(docItem);
+        thumb.addEventListener('click', () => openTheaterWithVideo(docItem, docs));
+        grid.appendChild(thumb);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const savedNav = document.getElementById('savedVideosNavBtn');
-    if (!savedNav) return;
-    savedNav.addEventListener('click', (e) => {
-        e.preventDefault();
-        try { pauseAllMedia(); } catch (e) { /* ignore */ }
-        try { closeWatchView(); } catch (e) { /* ignore */ }
+    const historyBtn = document.getElementById('historyNavBtn');
 
-        // Local references (query inside this handler to avoid cross-scope issues)
-        const navItems = document.querySelectorAll('.nav-item, .nav-link');
-        const searchInput = document.getElementById('searchInput');
-        const eventDateFilterInput = document.getElementById('eventDateFilter');
-        const clearDateFilterButton = document.getElementById('clearDateFilter');
-        const sidebarWrapper = document.querySelector('.sidebar-wrapper');
-        const activeSectionTitle = document.getElementById('activeSectionTitle');
-
-        if (activeSectionTitle) activeSectionTitle.textContent = 'Saved Videos';
-        if (searchInput) searchInput.value = '';
-        window.currentSearchTerm = '';
-        window.homeSearchTerm = '';
-        if (eventDateFilterInput) eventDateFilterInput.value = '';
-        window.currentFilterDate = null;
-        if (clearDateFilterButton) clearDateFilterButton.classList.add('hidden');
-
-        // Move active nav styling to Saved Videos tab
-        navItems.forEach(nav => nav.classList.remove('active'));
-        savedNav.classList.add('active');
-
-        // Show home layout and render saved videos using the home renderer
-        try {
-            const saved = (typeof getSavedVideos === 'function') ? getSavedVideos() : (window.getSavedVideos ? window.getSavedVideos() : []);
-            const docs = saved.map((entry, idx) => ({ id: entry.id || entry.url || `saved_${idx}`, data: Object.assign({}, (entry.metadata || {}), { title: entry.title || (entry.metadata && entry.metadata.title) || '', url: entry.url || (entry.metadata && entry.metadata.url) || '', thumbnailUrl: entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || '' }) }));
-
-            // Move active nav styling to Saved Videos tab
-            navItems.forEach(nav => nav.classList.remove('active'));
-            savedNav.classList.add('active');
-
-            // Ensure sidebar mobile auto-close
-            if (window.innerWidth <= 768 && sidebarWrapper && sidebarWrapper.classList.contains('active')) {
-                sidebarWrapper.classList.remove('active');
-            }
-
-            // Use the home feed renderer pipeline
-            showLocalFeed('Saved Videos', docs);
-        } catch (e) {
-            console.warn('Failed to render saved videos via home feed', e);
-            try { if (typeof renderSavedVideosLibrary === 'function') renderSavedVideosLibrary(); } catch (err) { /* ignore */ }
-        }
+    savedNav?.addEventListener('click', (event) => {
+        event.preventDefault();
+        showSavedVideosView(savedNav);
     });
 
-    // Bind History nav to perform the standard page-shift (exact behavior as other global nav links)
-    document.addEventListener('DOMContentLoaded', () => {
-        const historyBtn = document.getElementById('historyNavBtn');
-        if (!historyBtn) return;
-
-        historyBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-
-            try { if (typeof pauseAllMedia === 'function') pauseAllMedia(); } catch (err) { }
-            try { if (typeof closeWatchView === 'function') closeWatchView(); } catch (err) { }
-
-            // Reset scroll to top to match native tab shifts
-            try { window.scrollTo(0, 0); } catch (err) { /* ignore */ }
-
-            // Move active styling to History
-            document.querySelectorAll('.nav-item, .nav-link').forEach(n => n.classList.remove('active'));
-            historyBtn.classList.add('active');
-
-            // Hide all other content sections and bring historyView to front
-            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-            const historyView = document.getElementById('historyView');
-            if (historyView) {
-                historyView.classList.add('active');
-
-                // Ensure the section strip is visible and the grid is reset
-                const strip = historyView.querySelector('.section-strip'); if (strip) strip.style.display = '';
-                const grid = document.getElementById('historyViewGrid'); if (grid) grid.innerHTML = '';
-                // Render the full history feed (uses getWatchHistory which auto-filters 7-day window)
-                try {
-                    const history = (typeof getWatchHistory === 'function') ? getWatchHistory() : (window.getWatchHistory ? window.getWatchHistory() : []);
-                    const docs = (Array.isArray(history) ? history : []).map((entry, idx) => ({
-                        id: entry.firebaseUrl || entry.id || `history_${idx}`,
-                        data: Object.assign({}, (entry.metadata || {}), { title: entry.title || (entry.metadata && entry.metadata.title) || '', url: entry.firebaseUrl || (entry.metadata && entry.metadata.url) || '', thumbnailUrl: entry.thumbnailUrl || (entry.metadata && entry.metadata.thumbnailUrl) || '' })
-                    }));
-
-                    // Use the same visual card renderer as Home
-                    if (grid) {
-                        if (!docs.length) {
-                            grid.innerHTML = '<p class="text-center-message">Your watch history is empty. Recent videos you watch will appear here for 7 days!</p>';
-                        } else {
-                            docs.forEach((docItem) => {
-                                const thumb = renderHomeThumbnail(docItem);
-                                thumb.addEventListener('click', () => openTheaterWithVideo(docItem, docs));
-                                grid.appendChild(thumb);
-                            });
-                        }
-                    }
-                } catch (err) {
-                    console.warn('Failed to render history feed', err);
-                }
-            }
-
-            // Hide theater/player so list view is prominent
-            const theater = document.getElementById('theaterContainer');
-            if (theater) { theater.classList.add('hidden'); theater.style.display = 'none'; }
-
-            // Auto-close sidebar on mobile
-            const sidebarWrapper = document.querySelector('.sidebar-wrapper');
-            if (window.innerWidth <= 768 && sidebarWrapper && sidebarWrapper.classList.contains('active')) {
-                sidebarWrapper.classList.remove('active');
-            }
-        });
+    historyBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        showHistoryView(historyBtn);
     });
 });
 
