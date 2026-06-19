@@ -1,161 +1,145 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ruiru Media House - Viewer</title>
-    <link rel="stylesheet" href="./css/base.css">
-    <link rel="stylesheet" href="./css/layout.css">
-    <link rel="stylesheet" href="./css/components.css">
-    <link rel="stylesheet" href="./css/content.css">
-    <link rel="stylesheet" href="./css/responsive.css">
-    <link rel="stylesheet" href="./css/theme.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ruiru Media House - Welcome</title>
+    <link rel="stylesheet" href="./css/intro.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 </head>
 <body>
-    <div class="container">
-                <div class="sidebar-wrapper" id="appSidebar">
-            <nav class="sidebar-nav">
-                <ul>
-                    <li><a href="#" class="nav-item active" data-section="home">
-                        <i class="fas fa-home"></i> Home
-                    <!doctype html>
-                    <html lang="en">
-                      <head>
-                        <meta charset="utf-8">
-                        <meta name="viewport" content="width=device-width,initial-scale=1">
-                        <title>Ruiru Media House — Welcome</title>
-                        <link rel="stylesheet" href="./css/intro.css">
-                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-                      </head>
-                      <body>
-                        <header class="rmh-nav">
-                          <div class="rmh-container">
-                            <div class="brand">
-                              <img src="images/logo.jpg" alt="Ruiru Media House logo" class="brand-logo">
-                              <div class="brand-text">
-                                <span class="brand-name">Ruiru Media House</span>
-                              </div>
-                            </div>
-                            <div class="nav-actions">
-                              <button id="themeToggle" class="icon-btn" aria-label="Toggle theme" title="Toggle dark mode"><i class="fas fa-moon"></i></button>
-                              <a class="btn btn-primary" href="/dashboard.html">Open Dashboard</a>
-                            </div>
-                          </div>
-                        </header>
+    <header class="intro-nav">
+        <div class="intro-container intro-nav-inner">
+            <a class="intro-brand" href="./index.html" aria-label="Ruiru Media House home">
+                <img src="./images/logo.jpg" alt="Ruiru Media House logo" class="intro-logo">
+                <span>
+                    <strong>Ruiru Media House</strong>
+                    <small>Media and community portal</small>
+                </span>
+            </a>
 
-                        <main class="hero" role="main">
-                          <div class="rmh-container hero-inner">
-                            <div class="hero-left">
-                              <div class="hero-badge">RUIRU MEDIA HOUSE</div>
-                              <h1 class="hero-title">Discover, Learn, Watch, and Connect</h1>
-                              <p class="hero-desc">Welcome to Ruiru Media House, a platform bringing together live broadcasts, Bible studies, educational discussions, entertainment content, events, and media resources designed to inform, inspire, and encourage continuous learning.</p>
-                              <div class="hero-ctas">
-                                <a href="/dashboard.html" class="btn btn-primary large">Open Dashboard</a>
-                                <button id="learnMoreBtn" class="btn btn-secondary large">Learn More</button>
-                              </div>
-                            </div>
-                            <div class="hero-right">
-                              <div class="hero-logo-card">
-                                <img src="images/logo.jpg" alt="Ruiru Media House logo" class="hero-logo">
-                                <h3>Ruiru Media House</h3>
-                                <p class="muted">Your gateway to live and on-demand learning and entertainment.</p>
-                              </div>
-                            </div>
-                          </div>
-                        </main>
-
-                        <section id="features" class="features-section">
-                          <div class="rmh-container">
-                            <h2 class="section-title">Explore Features</h2>
-                            <div class="cards-grid">
-                              <article class="card">
-                                <h3>Live Broadcasts</h3>
-                                <p>Watch live events and sermons streamed in real time.</p>
-                              </article>
-                              <article class="card">
-                                <h3>Bible Studies</h3>
-                                <p>Join structured study sessions and sermon reflections.</p>
-                              </article>
-                              <article class="card">
-                                <h3>Entertainment</h3>
-                                <p>Curated entertainment content for families and youth.</p>
-                              </article>
-                              <article class="card">
-                                <h3>Events</h3>
-                                <p>Discover upcoming workshops, concerts, and community events.</p>
-                              </article>
-                              <article class="card">
-                                <h3>Personal Library</h3>
-                                <p>Save favorites and build a watchlist for later learning.</p>
-                              </article>
-                              <article class="card">
-                                <h3>Launch Pad</h3>
-                                <p>Host and discover projects and community initiatives.</p>
-                              </article>
-                            </div>
-                          </div>
-                        </section>
-
-                        <section class="stats-section">
-                          <div class="rmh-container stats-grid">
-                            <div class="stat"><span class="num" data-target="1000">0</span>+ Videos</div>
-                            <div class="stat"><span class="num" data-target="200">0</span> Live Events</div>
-                            <div class="stat"><span class="num" data-target="5000">0</span> Growing Library</div>
-                            <div class="stat"><span class="num" data-target="20">0</span> Categories</div>
-                          </div>
-                        </section>
-
-                        <section class="mission-section">
-                          <div class="rmh-container">
-                            <h2>A Platform Built for Discovery</h2>
-                            <p>Ruiru Media House organizes live, educational, and entertainment content so users can learn at their own pace, explore topics they care about, and engage with a growing community.</p>
-                          </div>
-                        </section>
-
-                        <section class="final-cta">
-                          <div class="rmh-container">
-                            <h2>Ready to Explore?</h2>
-                            <a href="/dashboard.html" class="btn btn-primary xlarge">Open Dashboard</a>
-                          </div>
-                        </section>
-
-                        <footer class="site-footer">
-                          <div class="rmh-container">
-                            <small>Ruiru Media House © All Rights Reserved</small>
-                          </div>
-                        </footer>
-
-                        <script src="./js/intro.js"></script>
-                      </body>
-                    </html>
-
-        <div id="registration-modal" class="registration-modal hidden" aria-hidden="true">
-        <div class="registration-modal-overlay"></div>
-        <div class="registration-modal-content">
-            <div class="registration-modal-icon" id="registration-modal-icon"></div>
-            <h2 class="registration-modal-title" id="registration-modal-title"></h2>
-            <p class="registration-modal-message" id="registration-modal-message"></p>
-            <button class="registration-modal-close" id="registration-modal-close">OK</button>
+            <a class="button button-primary" href="./dashboard.html">
+                <i class="fas fa-table-columns" aria-hidden="true"></i>
+                Dashboard
+            </a>
         </div>
-    </div>
-    <div class="youtube-btn-container hidden">
-  <button id="connectYoutube">Connect YouTube</button>
-</div>
+    </header>
 
+    <main>
+        <section class="intro-hero">
+            <div class="intro-container intro-hero-grid">
+                <div class="intro-copy">
+                    <p class="eyebrow">Ruiru Media House</p>
+                    <h1>Discover, Learn, Watch, and Connect.</h1>
+                    <p class="intro-lead">
+                        Welcome to Ruiru Media House, a platform bringing together live broadcasts, Bible studies, educational discussions, entertainment content, events, and media resources designed to inform, inspire, and encourage continuous learning.
+                    </p>
+                    <div class="intro-ctas">
+                        <a class="button button-primary button-large" href="./dashboard.html">
+                            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                            Open Dashboard
+                        </a>
+                        <button id="learnMoreBtn" class="button button-secondary button-large" type="button">
+                            Explore Features
+                        </button>
+                    </div>
+                </div>
 
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="./localstorage.js"></script>
-    <script type="module" src="./script.js"></script>
-        <script>
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then(reg => console.log('Service Worker registered successfully!', reg))
-                        .catch(err => console.log('Service Worker registration failed:', err));
-                });
-            }
-        </script>
+                <aside class="portal-panel" aria-label="Portal summary">
+                    <img src="./images/logo.jpg" alt="" class="portal-mark">
+                    <div class="portal-panel-copy">
+                        <p class="panel-label">Main Application</p>
+                        <h2>Fast access to ministry media.</h2>
+                        <p>Use the dashboard to browse live content, saved videos, history, events, and organized media categories.</p>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section id="features" class="features-section" aria-labelledby="featuresTitle">
+            <div class="intro-container">
+                <div class="section-heading">
+                    <p class="eyebrow">Platform Features</p>
+                    <h2 id="featuresTitle">Everything organized for easy discovery.</h2>
+                </div>
+
+                <div class="feature-grid">
+                    <article class="feature-card">
+                        <span class="feature-icon"><i class="fas fa-video" aria-hidden="true"></i></span>
+                        <h3>Live Broadcasts</h3>
+                        <p>Watch church services, sermons, and community programs as they happen.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <span class="feature-icon"><i class="fas fa-book-bible" aria-hidden="true"></i></span>
+                        <h3>Bible Studies</h3>
+                        <p>Follow structured study sessions and teaching resources for continued learning.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <span class="feature-icon"><i class="fas fa-film" aria-hidden="true"></i></span>
+                        <h3>Entertainment</h3>
+                        <p>Browse uplifting family, youth, and community media from one place.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <span class="feature-icon"><i class="fas fa-calendar-days" aria-hidden="true"></i></span>
+                        <h3>Events</h3>
+                        <p>Find upcoming programs, gatherings, workshops, and community activities.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <span class="feature-icon"><i class="fas fa-bookmark" aria-hidden="true"></i></span>
+                        <h3>Personal Library</h3>
+                        <p>Save favorite videos and keep important media easy to revisit later.</p>
+                    </article>
+
+                    <article class="feature-card">
+                        <span class="feature-icon"><i class="fas fa-rocket" aria-hidden="true"></i></span>
+                        <h3>Launch Pad</h3>
+                        <p>Discover hosted projects, community initiatives, and digital ministry tools.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="organization-footer">
+        <div class="intro-container organization-grid">
+            <section class="organization-card organization-identity" aria-labelledby="organizationTitle">
+                <p class="eyebrow">Organization Details</p>
+                <h2 id="organizationTitle">Church of God Seventh Day (Messianic Synagogue)</h2>
+                <p>COGMERs community information for worship, ministry, youth, and outreach connections.</p>
+            </section>
+
+            <section class="organization-card" aria-labelledby="locationTitle">
+                <h3 id="locationTitle"><i class="fas fa-location-dot" aria-hidden="true"></i> Location</h3>
+                <p>Eastleigh Section 3, Nairobi, Kenya</p>
+                <p>Ruiru, Central Province, Kenya (RXWC+J64)</p>
+            </section>
+
+            <section class="organization-card" aria-labelledby="contactTitle">
+                <h3 id="contactTitle"><i class="fas fa-address-book" aria-hidden="true"></i> Contact</h3>
+                <p><a href="tel:+254721460716">+254-721-460-716</a></p>
+                <p><a href="tel:+254796491270">+254 796 491270</a></p>
+                <p><a href="mailto:info@cogmers.or.ke">info@cogmers.or.ke</a></p>
+                <p><a href="https://cogmers.church" target="_blank" rel="noopener">cogmers.church</a></p>
+            </section>
+
+            <section class="organization-card" aria-labelledby="youthTitle">
+                <h3 id="youthTitle"><i class="fas fa-people-group" aria-hidden="true"></i> Youth &amp; Community Services</h3>
+                <p>Team Ruiru Youth (COGMERs)</p>
+                <p><a href="tel:+254111518427">0111 518427</a></p>
+                <p><a href="mailto:teamruiruyouth@gmail.com">teamruiruyouth@gmail.com</a></p>
+            </section>
+        </div>
+
+        <div class="intro-container footer-bottom">
+            <small>Ruiru Media House</small>
+            <small>Church of God (Seventh Day) - COGMERs</small>
+        </div>
+    </footer>
+
+    <script src="./js/intro.js"></script>
 </body>
 </html>
