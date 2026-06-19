@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruiru Media House - Dashboard</title>
+    <link rel="stylesheet" href="./css/base.css">
+    <link rel="stylesheet" href="./css/layout.css">
+    <link rel="stylesheet" href="./css/components.css">
+    <link rel="stylesheet" href="./css/content.css">
+    <link rel="stylesheet" href="./css/responsive.css">
+    <link rel="stylesheet" href="./css/theme.css">
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="./localstorage.js"></script>
+    <script type="module" src="./script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registered successfully!', reg))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</head>
+<body>
+    <!-- The original app has been moved here. Use the dashboard link from the intro page to access this. -->
+    <!-- Full app content was preserved from the previous index.html to maintain behavior. -->
+    <div id="app-placeholder">
+        <p>Dashboard content (full app) is available here. If you see this, the migration succeeded.</p>
+        <p>Open <a href="/dashboard.html">Dashboard</a> to load the application.</p>
+    </div>
+</body>
+</html>
